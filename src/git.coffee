@@ -84,7 +84,7 @@ Repository::getUpstreamBranch = (branch) ->
 
   "refs/remotes/#{branchRemote}/#{branchMerge.substring(11)}"
 
-Repository::getAheadBehindCount = (branch='HEAD')->
+Repository::getAheadBehindCount = (fromBranch='HEAD', toBranch=NULL)->
   if branch isnt 'HEAD' and branch.indexOf('refs/heads/') isnt 0
     branch = "refs/heads/#{branch}"
 
@@ -94,16 +94,20 @@ Repository::getAheadBehindCount = (branch='HEAD')->
   headCommit = @getReferenceTarget(branch)
   return counts unless headCommit?.length > 0
 
-  upstream = @getUpstreamBranch()
-  return counts unless upstream?.length > 0
-  upstreamCommit = @getReferenceTarget(upstream)
-  return counts unless upstreamCommit?.length > 0
+  if toBranch is NULL
+    toBranch = @getUpstreamBranch()
+  else
+    toBranch = "refs/heads/#{toBranch}"
+  
+  return counts unless toBranch?.length > 0
+  comparedCommit = @getReferenceTarget(toBranch)
+  return counts unless comparedCommit?.length > 0
 
-  mergeBase = @getMergeBase(headCommit, upstreamCommit)
+  mergeBase = @getMergeBase(headCommit, comparedCommit)
   return counts unless mergeBase?.length > 0
 
   counts.ahead = @getCommitCount(headCommit, mergeBase)
-  counts.behind = @getCommitCount(upstreamCommit, mergeBase)
+  counts.behind = @getCommitCount(comparedCommit, mergeBase)
   counts
 
 Repository::checkoutReference = (branch, create)->
